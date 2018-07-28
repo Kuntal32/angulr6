@@ -9,21 +9,23 @@ import {Observable, of} from 'rxjs';
 
 import { MessageService } from './message.service';
 
+const httpOptions = {
+  headers: new HttpHeaders({ 'Content-Type': 'application/json' })
+};
+
+
 @Injectable({
   providedIn: 'root'
 })
 export class HeroService {
-
-  private heroesUrl = 'api/heroes';
+ private heroesUrl = 'api/heroes';
   constructor(private http: HttpClient,
             private messageService: MessageService) { }
 
-  private log(message: string) {
-    this.messageService.add(`HeroService: ${message}`);
-  }
   getHeroes(): Observable<Hero[]> {
     return this.http.get<Hero[]>(this.heroesUrl)
     .pipe(
+      tap(_ => this.log('fetched heros')),
       catchError(this.handleError('getHeroes', []))
     );
   }
@@ -31,8 +33,15 @@ export class HeroService {
   getHero(id: number): Observable<Hero> {
     const url = `${this.heroesUrl}/${id}`;
     return this.http.get<Hero>(url).pipe(
-      tap(_ => this.log(`fetched hero id=${id}`)),
+      tap(heroes => this.log(`fetched hero id=${id}`)),
       catchError(this.handleError<Hero>(`getHero id=${id}`))
+    );
+  }
+
+  updateHero (hero: Hero): Observable<any> {
+    return this.http.put(this.heroesUrl, hero, httpOptions).pipe(
+      tap(_ => this.log(`updated hero id=${hero.id}`)),
+      catchError(this.handleError<any>('updateHero'))
     );
   }
 
@@ -42,5 +51,9 @@ export class HeroService {
        this.log(`${operation} failed: ${error.message}`);
        return of(result as T);
     };
+  }
+
+  private log(message: string) {
+    this.messageService.add(`HeroService: ${message}`);
   }
 }
